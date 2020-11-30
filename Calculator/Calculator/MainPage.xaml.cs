@@ -1,12 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
 using System.Data;
 using System.Linq;
-using System.Linq.Expressions;
-using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using Xamarin.Forms;
 
 namespace Calculator
@@ -67,7 +62,7 @@ namespace Calculator
         }
 
         void DeleteResult(object sender, EventArgs e)
-        { 
+        {
             resultText.Text = "0";
             LabelSize();
         }
