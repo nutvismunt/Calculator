@@ -1,79 +1,134 @@
 ﻿using System;
-using System.Data;
 using System.Linq;
-using System.Text.RegularExpressions;
 using Xamarin.Forms;
 
 namespace Calculator
 {
     public partial class MainPage : ContentPage
     {
-        private bool buttonEnabling = true;
+        private const string startValue = "0";
+        private bool isNextNum = true;
+        private short numLength;
+
         public MainPage()
         {
             InitializeComponent();
-            resultText.Text = "0";
-            resultText.FontSize = 40;
-        }
-        void LabelSize()
-        {
-            if (resultText.Text.Length >= 15) resultText.FontSize = 30;
-            else resultText.FontSize = 40;
+            resultLabel.Text = startValue;
+            resultLabel.FontSize = 35;
         }
 
-        void SelectedNumber(object sender, EventArgs e)
+        void OnClear(object sender, EventArgs e)
         {
-            var button = (Button)sender;
-            var number = button.Text;
-            var result = resultText.Text;
-            if (result.Length == 1 && int.Parse(result) == 0 || Regex.IsMatch(result, @"[a-zA-Z]"))
-                resultText.Text = "";
-            LabelSize();
-            resultText.Text += number;
-            buttonEnabling = true;
+            resultLabel.Text = resultLabel.Text.Substring(0, resultLabel.Text.Length - 1);
+            if (resultLabel.Text.Count() == 0)
+                resultLabel.Text = startValue;
+            MaxLength(resultLabel.Text.Count());
+            numLength--;
         }
 
-        void SelectedOperator(object sender, EventArgs e)
+        void OnDelete(object sender, EventArgs e)
         {
-            if (buttonEnabling)
+            resultLabel.Text = resultLabel.Text.Replace(resultLabel.Text, "");
+            resultLabel.Text = startValue;
+            MaxLength(resultLabel.Text.Count());
+            numLength = 0;
+        }
+
+        void OnSelectNum(object sender, EventArgs e)
+        {
+            var num = sender as Button;
+            var result = resultLabel.Text;
+            if (numLength>=14)
             {
-                if (Regex.IsMatch(resultText.Text, @"[a-zA-Z]")) resultText.Text = "0";
-                var button = (Button)sender;
-                var operation = button.Text;
-                LabelSize();
-                resultText.Text += operation;
+                goto End;
             }
-            buttonEnabling = false;
+            if (isNextNum)
+            {
+                switch (result)
+                {
+                    case "NaN":
+                        resultLabel.Text = result.Replace(result, num.Text);
+                        break;
+                    case startValue:
+                        resultLabel.Text = result.Replace(result, num.Text);
+                        break;
+                    default:
+                        resultLabel.Text += num.Text; break;
+                }
+                numLength++;
+            }
+            else
+                goto End;
+            End:
+            MaxLength(result.Count());
         }
 
-        void OperationResult(object sender, EventArgs e)
+        void OnSelectOperator(object sender, EventArgs e)
         {
-            var result = resultText.Text.Replace("×", "*").Replace("÷", "/");
-            if (char.IsDigit(result.Last()))
+            var result = resultLabel.Text;
+            var num = sender as Button;
+            var operation =num.Text!="."? ' '+ num.Text + ' ': num.Text;
+            MaxLength(resultLabel.Text.Count());
+            resultLabel.Text = char.IsDigit(result.Last()) ? result + operation : result.Remove(result.Length - 1).Insert(result.Length - 1, operation);
+            isNextNum = true;
+            numLength = 0;
+        }
+
+        void OnCalculate(object sender, EventArgs e)
+        {
+            var labelText = resultLabel.Text;
+            if (char.IsDigit(labelText.Last()))
             {
                 try
                 {
-                    var answer = new DataTable().Compute(result, "");
-                    resultText.Text = answer.ToString();
-                    LabelSize();
+                    char check = ' ';
+                    string [] numbers = labelText.Split(check);
+                    var answer = Calculation(numbers);
+                    resultLabel.Text = answer.ToString();
+                    MaxLength(resultLabel.Text.Count());
                 }
-                catch (Exception) { resultText.Text = "Error"; }
+                catch (Exception) { 
+                    resultLabel.Text = "Ошибка"; 
+                }
             }
         }
 
-        void DeleteResult(object sender, EventArgs e)
+        bool MaxLength(int length)
         {
-            resultText.Text = "0";
-            LabelSize();
+            var isLength = length >= 14;
+            switch (isLength)
+            {
+                case true:
+                    resultLabel.FontSize = 30; return false;
+                default:
+                    resultLabel.FontSize = 40; return true;
+            }
         }
 
-        void ClearCharacter(object sender, EventArgs e)
+        public double Calculation(string [] enumer)
         {
-            var result = resultText.Text;
-            if (result.Length >= 1 && result != "0")
-                resultText.Text = result.Remove(result.Length - 1);
-            if (resultText.Text == "") resultText.Text = "0";
-            LabelSize();
+            double result = double.Parse(enumer[0]);
+            for (int i=0; i<enumer.Length; i++)
+            {
+                
+                switch (enumer[i])
+                {
+                    case "+":
+                        result += double.Parse(enumer[i + 1]);
+                        break;
+                    case "-":
+                        result -= double.Parse(enumer[i + 1]);
+                        break;
+                    case "/":
+                        result /=double.Parse(enumer[i + 1]);
+                        break;
+                    case "*":
+                        result *= double.Parse(enumer[i + 1]);
+                        break;
+                }
+            }
+            return result;
         }
-    }
+
+}
 }
